@@ -2,8 +2,8 @@ let WIDTH,
     HEIGHT,
     cells = [];
 
-const GRID_X = 10,
-    GRID_Y = 10,
+const GRID_X = 20,
+    GRID_Y = 20,
     N = GRID_X * GRID_Y,
     CELL_SIZE = 40,
     MINE_PROB = 0.15;
@@ -22,16 +22,64 @@ canvas.addEventListener("click", e => {
     const x = floor(e.offsetX / CELL_SIZE) * CELL_SIZE;
     const y = floor(e.offsetY / CELL_SIZE) * CELL_SIZE;
 
+    let target;
+
     for (const c of cells) {
         if (c.pos.x == x && c.pos.y == y) {
-            c.changeShow();
+            target = c;
+            if (target.show) return;
+            if (target.mine) {
+                init();
+            }
+            target.changeShow();
             ani();
             break;
         }
     }
+
+    if (target.count == 0 && !target.mine) {
+        showEmptyNeighbors(target);
+    }
 });
 
+const showEmptyNeighbors = c => {
+    const x = c.pos.x / CELL_SIZE;
+    const y = c.pos.y / CELL_SIZE;
+
+    // Evaluate only x and y axis neighbors
+    for (const pair of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1]
+    ]) {
+        const [i, j] = pair;
+        const newX = x + i;
+        const newY = y + j;
+        if (newX < 0 || newX > GRID_X - 1 || newY < 0 || newY > GRID_Y - 1 || (i == 0 && j == 0))
+            continue;
+        const idx = IX(newX, newY, GRID_X);
+
+        const neighbor = cells[idx];
+
+        // If neighbor is shown, is mine or has count > 0, do nothing
+        if (neighbor.show || neighbor.count > 0 || neighbor.mine) continue;
+
+        neighbor.changeShow();
+        showEmptyNeighbors(neighbor);
+
+        // if (neighbor && neighbor.count == 0 && neighbor.show) {
+        //     c.changeShow();
+        //     showEmptyNeighbors(neighbor);
+        // }
+    }
+
+    ani();
+};
+
 function init() {
+    resetGlobalState();
+
     WIDTH = window.innerWidth;
     HEIGHT = window.innerHeight;
 
@@ -50,7 +98,7 @@ function init() {
                 stroke: true,
                 mine,
                 fillColor: "#c0c0c0",
-                show: true,
+                show: false,
                 strokeColor: "white"
             });
 
@@ -90,8 +138,10 @@ function ani() {
     for (const cell of cells) {
         cell.draw();
     }
+}
 
-    //requestAnimationFrame(ani);
+function resetGlobalState() {
+    cells = [];
 }
 
 init();
