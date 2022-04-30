@@ -46,32 +46,44 @@ const showEmptyNeighbors = c => {
     const x = c.pos.x / CELL_SIZE;
     const y = c.pos.y / CELL_SIZE;
 
-    // Evaluate only x and y axis neighbors
-    for (const pair of [
+    const pairs = [
         [-1, 0],
         [1, 0],
         [0, -1],
         [0, 1]
-    ]) {
-        const [i, j] = pair;
-        const newX = x + i;
-        const newY = y + j;
-        if (newX < 0 || newX > GRID_X - 1 || newY < 0 || newY > GRID_Y - 1 || (i == 0 && j == 0))
-            continue;
-        const idx = IX(newX, newY, GRID_X);
+    ];
 
-        const neighbor = cells[idx];
+    // Evaluate only x and y axis neighbors
+    for (let i = -1; i < 2; i++) {
+        for (let j = -1; j < 2; j++) {
+            const newX = x + i;
+            const newY = y + j;
+            if (
+                newX < 0 ||
+                newX > GRID_X - 1 ||
+                newY < 0 ||
+                newY > GRID_Y - 1 ||
+                (i == 0 && j == 0)
+            )
+                continue;
+            const idx = IX(newX, newY, GRID_X);
 
-        // If neighbor is shown, is mine or has count > 0, do nothing
-        if (neighbor.show || neighbor.count > 0 || neighbor.mine) continue;
+            const neighbor = cells[idx];
 
-        neighbor.changeShow();
-        showEmptyNeighbors(neighbor);
+            // If neighbor is shown, is mine or has count > 0, do nothing
+            if (neighbor.show || neighbor.mine) continue;
 
-        // if (neighbor && neighbor.count == 0 && neighbor.show) {
-        //     c.changeShow();
-        //     showEmptyNeighbors(neighbor);
-        // }
+            // If neighbor has count > 0, show it, else, only show if in x or y axis
+            if (neighbor.count > 0) {
+                neighbor.changeShow();
+                continue;
+            }
+
+            if (pairs.some(el => arraysEqual([i, j], el))) {
+                neighbor.changeShow();
+                showEmptyNeighbors(neighbor);
+            }
+        }
     }
 
     ani();
@@ -142,6 +154,17 @@ function ani() {
 
 function resetGlobalState() {
     cells = [];
+}
+
+function arraysEqual(a, b) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    if (a.length !== b.length) return false;
+
+    for (var i = 0; i < a.length; ++i) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
 }
 
 init();
